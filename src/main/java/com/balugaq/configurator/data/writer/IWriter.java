@@ -10,6 +10,11 @@ public interface IWriter {
     public void write(File file, Node node);
     default Map<String, Object> serialize(Node node) {
         var map = new HashMap<String, Object>();
+        var k = node.getKey();
+        if (k == null) {
+            return map;
+        }
+
         var v = node.getValue();
         if (v != null) map.put(node.getKey(), v);
 
