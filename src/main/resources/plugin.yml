@@ -1,0 +1,14 @@
+name: Configurator
+author: balugaq
+description: This is a plugin
+main: com.balugaq.configurator.Configurator
+website: https://github.com/balugaq/Configurator
+version: ${project.version}
+api-version: 1.20
+commands:
+  configurator:
+    aliases:
+      - cf
+      - configurator
+    description: /configurator
+    usage: /configurator <sub>

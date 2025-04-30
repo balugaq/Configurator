@@ -1,0 +1,30 @@
+package com.balugaq.configurator.visual.lib;
+
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Interaction;
+import org.bukkit.entity.ItemDisplay;
+
+import java.util.Optional;
+import java.util.UUID;
+
+@SuppressWarnings("unused")
+public class ItemDisplayId extends CustomId {
+    public ItemDisplayId() {
+        super();
+    }
+    public ItemDisplayId(final CustomId id) {
+        super(id);
+    }
+    public ItemDisplayId(final String uuid) {
+        super(uuid);
+    }
+    public ItemDisplayId(final UUID uuid) {
+        super(uuid);
+    }
+    @Override
+    public Optional<ItemDisplay> get() {
+        return (Bukkit.getEntity(getUUID()) instanceof final ItemDisplay itemDisplay)
+                ? Optional.of(itemDisplay)
+                : Optional.empty();
+    }
+}
