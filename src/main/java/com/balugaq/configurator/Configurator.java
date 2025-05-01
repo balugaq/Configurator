@@ -1,9 +1,10 @@
 package com.balugaq.configurator;
 
-import com.balugaq.configurator.command.CreateCommand;
+import com.balugaq.configurator.command.ConfiguratorCommand;
 import com.balugaq.configurator.visual.VisualCache;
 import com.balugaq.configurator.visual.VisualReloader;
 import com.balugaq.configurator.visual.interaction.InteractionListener;
+import com.balugaq.configurator.visual.interaction.VisualNodeInteractListener;
 import com.balugaq.configurator.visual.movement.ControlVisualListener;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -19,7 +20,8 @@ public class Configurator extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new VisualReloader(), this);
         Bukkit.getPluginManager().registerEvents(new ControlVisualListener(), this);
         Bukkit.getPluginManager().registerEvents(new InteractionListener(), this);
-        getCommand("configurator").setExecutor(new CreateCommand());
+        Bukkit.getPluginManager().registerEvents(new VisualNodeInteractListener(), this);
+        getCommand("configurator").setExecutor(new ConfiguratorCommand());
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, Configurator::saveVisual, 0L, 20L * 60L * 5L);
     }
 

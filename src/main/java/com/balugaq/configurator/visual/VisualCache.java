@@ -7,18 +7,22 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.w3c.dom.Node;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 @Getter
 public class VisualCache {
-    private static final Map<UUID, VisualNode> visualNodes = new HashMap<>();
-    private static final Map<UUID, NodeLink> nodeLinks = new HashMap<>();
-    private static final Map<UUID, Set<UUID>> connectedNodes = new HashMap<>();
+    private static final Map<UUID/*VisualNode ID*/, VisualNode>               visualNodes    = new HashMap<>();
+    private static final Map<UUID/*VisualNode ID*/, NodeLink>                 nodeLinks      = new HashMap<>();
+    private static final Map<UUID/*VisualNode ID*/, Set<UUID/*NodeLink ID*/>> connectedNodes = new HashMap<>();
     private static final Map<Integer, InteractHandler> interactHandlers = new HashMap<>();
 
     public static void addVisualNode(VisualNode visualNode) {
@@ -27,19 +31,20 @@ public class VisualCache {
 
     public static void addNodeLink(NodeLink nodeLink) {
         nodeLinks.put(nodeLink.getUniqueId(), nodeLink);
+
         VisualNode source = nodeLink.getSource();
         VisualNode destination = nodeLink.getDestination();
         if (!connectedNodes.containsKey(source.getUniqueId())) {
             connectedNodes.put(source.getUniqueId(), new HashSet<>());
         }
 
-        connectedNodes.get(source.getUniqueId()).add(destination.getUniqueId());
+        connectedNodes.get(source.getUniqueId()).add(nodeLink.getUniqueId());
 
         if (!connectedNodes.containsKey(destination.getUniqueId())) {
             connectedNodes.put(destination.getUniqueId(), new HashSet<>());
         }
 
-        connectedNodes.get(destination.getUniqueId()).add(source.getUniqueId());
+        connectedNodes.get(destination.getUniqueId()).add(nodeLink.getUniqueId());
     }
 
     public static void setInteractHandler(Integer id, InteractHandler interactHandler) {
@@ -48,6 +53,10 @@ public class VisualCache {
 
     public static VisualNode getVisualNode(UUID uuid) {
         return visualNodes.get(uuid);
+    }
+
+    public static void removeNodeLink(NodeLink nodeLink) {
+        nodeLinks.remove(nodeLink.getSource().getUniqueId());
     }
 
     public static NodeLink getNodeLink(UUID uuid) {
@@ -65,15 +74,32 @@ public class VisualCache {
         return nodeLinks;
     }
 
+    public static Map<UUID, Set<UUID>> getAllConnectedNodes() {
+        return connectedNodes;
+    }
+
+    public static void removeVisualNode(VisualNode visualNode) {
+        visualNodes.remove(visualNode.getUniqueId());
+    }
+
+    public static List<NodeLink> getConnectedNodeLinks(VisualNode node) {
+        var connected = connectedNodes.get(node.getUniqueId());
+        if (connected == null) {
+            return new ArrayList<>();
+        }
+
+        return connected.stream().map(nodeLinks::get).filter(Objects::nonNull).toList();
+    }
+
     public static void gc() {
         Bukkit.getScheduler().runTask(Configurator.getInstance(), () -> {
-            var invalids1 = visualNodes.keySet().parallelStream().filter(uuid -> Bukkit.getEntity(uuid) == null).toList();
+            var invalids1 = visualNodes.keySet().stream().filter(uuid -> Bukkit.getEntity(uuid) == null).toList();
             for (var invalid : invalids1) {
                 visualNodes.remove(invalid);
                 connectedNodes.remove(invalid);
             }
 
-            var invalids2 = nodeLinks.keySet().parallelStream().filter(uuid -> Bukkit.getEntity(uuid) == null).toList();
+            var invalids2 = nodeLinks.keySet().stream().filter(uuid -> Bukkit.getEntity(uuid) == null).toList();
             for (var invalid : invalids2) {
                 nodeLinks.remove(invalid);
             }
@@ -101,6 +127,6 @@ public class VisualCache {
 
     @FunctionalInterface
     public interface InteractHandler {
-        void onInteract(PlayerInteractEntityEvent event, Entity clicked, Interaction interaction);
+        void onInteract(PlayerInteractEntityEvent event, Entity belongsTo, Interaction interaction);
     }
 }

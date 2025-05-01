@@ -26,7 +26,7 @@ public class NodeLink {
 
     static {
         VisualCache.setInteractHandler(interactHandlerID, ( event, clicked, interaction) -> {
-            event.getPlayer().sendMessage("Called NodeLink InteractHandler");
+            // no ideas yet
         });
     }
 
@@ -36,6 +36,7 @@ public class NodeLink {
         this.display = createLine(source.getLocation(), destination.getLocation());
         this.interaction = createInteraction(source.getLocation());
         VisualCache.addNodeLink(this);
+        saveToPDC(getDisplay().getPersistentDataContainer());
     }
 
     public NodeLink(VisualNode source, VisualNode destination, Interaction interaction) {
@@ -44,6 +45,7 @@ public class NodeLink {
         this.display = createLine(source.getLocation(), destination.getLocation());
         this.interaction = interaction;
         VisualCache.addNodeLink(this);
+        saveToPDC(getDisplay().getPersistentDataContainer());
     }
 
     private BlockDisplay createLine(Location source, Location destination) {
@@ -121,5 +123,15 @@ public class NodeLink {
 
     public UUID getUniqueId() {
         return display.getUniqueId();
+    }
+
+    public Location getLocation() {
+        return display.getLocation();
+    }
+
+    public void remove() {
+        display.remove();
+        interaction.remove();
+        VisualCache.removeNodeLink(this);
     }
 }

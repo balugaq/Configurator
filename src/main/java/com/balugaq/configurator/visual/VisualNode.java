@@ -2,6 +2,7 @@ package com.balugaq.configurator.visual;
 
 import com.balugaq.configurator.Configurator;
 import com.balugaq.configurator.data.relation.Node;
+import com.balugaq.configurator.events.PlayerInteractVisualNodeEvent;
 import com.jeff_media.morepersistentdatatypes.DataType;
 import lombok.Data;
 import org.bukkit.Bukkit;
@@ -15,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -22,33 +24,37 @@ import java.util.UUID;
 public class VisualNode {
     public static final Integer interactHandlerID = 2 << 17;
     private Node node;
-    private Location location;
     private ItemDisplay display;
     private Interaction interaction;
     private ArrayList<UUID> children;
 
     static {
-        VisualCache.setInteractHandler(interactHandlerID, ( event, clicked, interaction) -> {
-            event.getPlayer().sendMessage("Called VisualNode InteractHandler");
+        VisualCache.setInteractHandler(interactHandlerID, ( event, belongsTo, interaction) -> {
+            Configurator.getInstance().getLogger().info("Called VisualNode InteractHandler");
+            VisualNode visualNode = VisualCache.getVisualNode(belongsTo.getUniqueId());
+            if (visualNode != null) {
+                Configurator.getInstance().getLogger().info("New PlayerInteractVisualNodeEvent");
+                new PlayerInteractVisualNodeEvent(event.getPlayer(), visualNode).callEvent();
+            }
         });
     }
 
     public VisualNode(Node node, Location location) {
         this.node = node;
-        this.location = location;
         this.display = createItemDisplay(location);
         this.interaction = createInteraction(location);
         this.children = new ArrayList<>();
         VisualCache.addVisualNode(this);
+        saveToPDC(getDisplay().getPersistentDataContainer());
     }
 
-    public VisualNode(Node node, Location location, ItemDisplay display, Interaction interaction, ArrayList<UUID> children) {
+    public VisualNode(Node node, ItemDisplay display, Interaction interaction, ArrayList<UUID> children) {
         this.node = node;
-        this.location = location;
         this.display = display;
         this.interaction = interaction;
         this.children = children;
         VisualCache.addVisualNode(this);
+        saveToPDC(getDisplay().getPersistentDataContainer());
     }
 
     private ItemDisplay createItemDisplay(Location location) {
@@ -133,7 +139,11 @@ public class VisualNode {
             node.addChild(childVisualNode.getNode());
         }
 
-        return new VisualNode(node, itemDisplay.getLocation(), itemDisplay, interaction, children);
+        return new VisualNode(node, itemDisplay, interaction, children);
+    }
+
+    public Location getLocation() {
+        return display.getLocation();
     }
 
     private static String serializeValue(Object value) {
@@ -204,5 +214,20 @@ public class VisualNode {
 
     public UUID getUniqueId() {
         return display.getUniqueId();
+    }
+
+    public void remove() {
+        display.remove();
+        interaction.remove();
+        VisualCache.removeVisualNode(this);
+    }
+
+    public void reconnect() {
+        var links = VisualCache.getConnectedNodeLinks(this);
+        List<VisualNode> connects = links.parallelStream().map(link -> link.getSource().getUniqueId() == getUniqueId() ? link.getDestination() : link.getSource()).toList();
+        for (VisualNode connect : connects) {
+            new NodeLink(this, connect);
+        }
+        links.forEach(NodeLink::remove);
     }
 }
