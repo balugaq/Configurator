@@ -1,10 +1,9 @@
 package com.balugaq.configurator.data.writer;
 
-import java.io.File;
-import java.util.Map;
-
 import com.balugaq.configurator.data.relation.Node;
 import org.bukkit.configuration.file.YamlConfiguration;
+
+import java.io.File;
 
 public class YAMLWriter implements IWriter {
     @Override

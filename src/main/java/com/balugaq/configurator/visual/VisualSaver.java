@@ -7,7 +7,7 @@ import org.bukkit.entity.ItemDisplay;
 import java.util.List;
 
 public class VisualSaver {
-    public static void save(List<Entity> event) {
+    public static void save(Iterable<Entity> event) {
         for (Entity entity : event) {
             if (entity instanceof ItemDisplay) {
                 VisualNode visualNode = VisualNode.loadFromPDC(entity.getPersistentDataContainer());

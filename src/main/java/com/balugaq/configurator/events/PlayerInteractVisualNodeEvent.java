@@ -17,11 +17,11 @@ public class PlayerInteractVisualNodeEvent extends PlayerEvent {
         this.visualNode = visualNode;
     }
 
-    public @NotNull HandlerList getHandlers() {
+    public static @NotNull HandlerList getHandlerList() {
         return handlers;
     }
 
-    public static @NotNull HandlerList getHandlerList() {
+    public @NotNull HandlerList getHandlers() {
         return handlers;
     }
 }

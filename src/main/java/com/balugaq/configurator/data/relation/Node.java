@@ -1,25 +1,19 @@
 package com.balugaq.configurator.data.relation;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import com.balugaq.configurator.Configurator;
-import org.bukkit.NamespacedKey;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
-
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @Data
 public class Node {
-    private String key = "Not set"; // 配置项的键名
-    private Object value = "Not set"; // 配置项的值
-    private List<Node> children; // 子节点，支持嵌套结构
+    private String key = "Not set";
+    private Object value = "Not set";
+    private List<Node> children;
     private transient boolean dirty = true;
 
     public Node(String key, Object value) {

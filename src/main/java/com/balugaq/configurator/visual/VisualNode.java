@@ -1,6 +1,7 @@
 package com.balugaq.configurator.visual;
 
 import com.balugaq.configurator.Configurator;
+import com.balugaq.configurator.data.VisualNodeId;
 import com.balugaq.configurator.data.relation.Node;
 import com.balugaq.configurator.events.PlayerInteractVisualNodeEvent;
 import com.jeff_media.morepersistentdatatypes.DataType;
@@ -8,10 +9,10 @@ import lombok.Data;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
-import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 
@@ -23,21 +24,22 @@ import java.util.UUID;
 @Data
 public class VisualNode {
     public static final Integer interactHandlerID = 2 << 17;
-    private Node node;
-    private ItemDisplay display;
-    private Interaction interaction;
-    private ArrayList<UUID> children;
 
     static {
-        VisualCache.setInteractHandler(interactHandlerID, ( event, belongsTo, interaction) -> {
+        VisualCache.setInteractHandler(interactHandlerID, (event, belongsTo, interaction) -> {
             Configurator.getInstance().getLogger().info("Called VisualNode InteractHandler");
-            VisualNode visualNode = VisualCache.getVisualNode(belongsTo.getUniqueId());
+            VisualNode visualNode = VisualCache.getVisualNode(new VisualNodeId(belongsTo.getUniqueId()));
             if (visualNode != null) {
                 Configurator.getInstance().getLogger().info("New PlayerInteractVisualNodeEvent");
                 new PlayerInteractVisualNodeEvent(event.getPlayer(), visualNode).callEvent();
             }
         });
     }
+
+    private Node node;
+    private ItemDisplay display;
+    private Interaction interaction;
+    private ArrayList<UUID> children;
 
     public VisualNode(Node node, Location location) {
         this.node = node;
@@ -57,40 +59,20 @@ public class VisualNode {
         saveToPDC(getDisplay().getPersistentDataContainer());
     }
 
-    private ItemDisplay createItemDisplay(Location location) {
-        ItemDisplay itemDisplay = location.getWorld().spawn(location, ItemDisplay.class);
-        itemDisplay.setItemStack(new ItemStack(Material.STONE));
-        itemDisplay.setCustomName(node.getKey());
-        itemDisplay.setCustomNameVisible(true);
-        return itemDisplay;
-    }
-
-    private Interaction createInteraction(Location location) {
-        Interaction interaction = location.getWorld().spawn(location, Interaction.class);
-        interaction.getPersistentDataContainer().set(new NamespacedKey(Configurator.getInstance(), "c_interaction_belongs_to"), DataType.UUID, display.getUniqueId());
-        interaction.setInteractionHeight(display.getDisplayHeight() + 1);
-        interaction.setInteractionWidth(display.getDisplayWidth() + 1);
-        return interaction;
-    }
-
-    public void saveToPDC(PersistentDataContainer pdc) {
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_uuid"), DataType.UUID, display.getUniqueId());
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_children"), DataType.asArrayList(DataType.UUID), children);
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_key"), DataType.STRING, node.getKey());
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_value"), DataType.STRING, serializeValue(node.getValue()));
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_interaction"), DataType.UUID, interaction.getUniqueId());
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_interact_handler"), DataType.INTEGER, interactHandlerID);
-    }
-
     public static VisualNode loadFromPDC(PersistentDataContainer pdc) {
         UUID uuid = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_uuid"), DataType.UUID);
         if (uuid == null) {
             return null;
         }
 
-        VisualNode loaded = VisualCache.getVisualNode(uuid);
+        VisualNode loaded = VisualCache.getVisualNode(new VisualNodeId(uuid));
         if (loaded != null) {
             return loaded;
+        }
+
+        Entity entity = Bukkit.getEntity(uuid);
+        if (!(entity instanceof ItemDisplay itemDisplay)) {
+            return null;
         }
 
         ArrayList<UUID> children = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_children"), DataType.asArrayList(DataType.UUID));
@@ -120,10 +102,6 @@ public class VisualNode {
 
         Object value = deserializeValue(valueString);
         Node node = new Node(key, value);
-        Entity entity = Bukkit.getEntity(uuid);
-        if (!(entity instanceof ItemDisplay itemDisplay)) {
-            return null;
-        }
 
         for (UUID child : children) {
             Entity childEntity = Bukkit.getEntity(child);
@@ -132,7 +110,7 @@ public class VisualNode {
             }
 
             VisualNode childVisualNode = loadFromPDC(childItemDisplay.getPersistentDataContainer());
-            if (childVisualNode == null){
+            if (childVisualNode == null) {
                 continue;
             }
 
@@ -140,10 +118,6 @@ public class VisualNode {
         }
 
         return new VisualNode(node, itemDisplay, interaction, children);
-    }
-
-    public Location getLocation() {
-        return display.getLocation();
     }
 
     private static String serializeValue(Object value) {
@@ -197,6 +171,35 @@ public class VisualNode {
         }
     }
 
+    private ItemDisplay createItemDisplay(Location location) {
+        ItemDisplay itemDisplay = location.getWorld().spawn(location, ItemDisplay.class);
+        itemDisplay.setItemStack(new ItemStack(Material.STONE));
+        itemDisplay.setCustomName(node.getKey());
+        itemDisplay.setCustomNameVisible(true);
+        return itemDisplay;
+    }
+
+    private Interaction createInteraction(Location location) {
+        Interaction interaction = location.getWorld().spawn(location, Interaction.class);
+        interaction.getPersistentDataContainer().set(new NamespacedKey(Configurator.getInstance(), "c_interaction_belongs_to"), DataType.UUID, display.getUniqueId());
+        interaction.setInteractionHeight(display.getDisplayHeight() + 1);
+        interaction.setInteractionWidth(display.getDisplayWidth() + 1);
+        return interaction;
+    }
+
+    public void saveToPDC(PersistentDataContainer pdc) {
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_uuid"), DataType.UUID, display.getUniqueId());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_children"), DataType.asArrayList(DataType.UUID), children);
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_key"), DataType.STRING, node.getKey());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_value"), DataType.STRING, serializeValue(node.getValue()));
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_interaction"), DataType.UUID, interaction.getUniqueId());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_interact_handler"), DataType.INTEGER, interactHandlerID);
+    }
+
+    public Location getLocation() {
+        return display.getLocation();
+    }
+
     public void updateDisplay() {
         if (node.isDirty()) {
             display.setCustomName(node.getKey());
@@ -212,8 +215,8 @@ public class VisualNode {
         node.setValue(value);
     }
 
-    public UUID getUniqueId() {
-        return display.getUniqueId();
+    public VisualNodeId getUniqueId() {
+        return new VisualNodeId(display.getUniqueId());
     }
 
     public void remove() {
@@ -223,8 +226,8 @@ public class VisualNode {
     }
 
     public void reconnect() {
-        var links = VisualCache.getConnectedNodeLinks(this);
-        List<VisualNode> connects = links.parallelStream().map(link -> link.getSource().getUniqueId() == getUniqueId() ? link.getDestination() : link.getSource()).toList();
+        var links = new ArrayList<>(VisualCache.getConnectedNodeLinks(this));
+        List<VisualNode> connects = links.parallelStream().map(link -> link.getSource().getUniqueId().equals(getUniqueId()) ? link.getDestination() : link.getSource()).toList();
         for (VisualNode connect : connects) {
             new NodeLink(this, connect);
         }

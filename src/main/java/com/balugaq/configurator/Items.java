@@ -15,4 +15,13 @@ public class Items {
             "&6连接棒",
             "&b右键两个实体以连接"
     );
+
+    public static String getDisplayName(ItemStack itemStack) {
+        var meta = itemStack.getItemMeta();
+        if (meta == null) {
+            return "Air";
+        }
+
+        return meta.getDisplayName();
+    }
 }

@@ -1,6 +1,7 @@
 package com.balugaq.configurator.command;
 
 import com.balugaq.configurator.Items;
+import com.balugaq.configurator.data.VisualNodeId;
 import com.balugaq.configurator.data.relation.Node;
 import com.balugaq.configurator.visual.NodeLink;
 import com.balugaq.configurator.visual.VisualCache;
@@ -30,7 +31,7 @@ public class ConfiguratorCommand implements TabExecutor {
         if (strings[0].equals("node"))
             new VisualNode(new Node(), player.getLocation());
         if (strings[0].equals("link"))
-            new NodeLink(VisualCache.getVisualNode(UUID.fromString(strings[1])), VisualCache.getVisualNode(UUID.fromString(strings[2])));
+            new NodeLink(VisualCache.getVisualNode(new VisualNodeId(UUID.fromString(strings[1]))), VisualCache.getVisualNode(new VisualNodeId(UUID.fromString(strings[2]))));
         if (strings[0].equals("control"))
             player.getInventory().addItem(Items.CONTROL_WAND.clone());
         if (strings[0].equals("connect"))

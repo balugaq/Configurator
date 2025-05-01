@@ -1,6 +1,8 @@
 package com.balugaq.configurator.visual;
 
 import com.balugaq.configurator.Configurator;
+import com.balugaq.configurator.data.NodeLinkId;
+import com.balugaq.configurator.data.VisualNodeId;
 import com.jeff_media.morepersistentdatatypes.DataType;
 import lombok.Data;
 import org.bukkit.Bukkit;
@@ -19,16 +21,17 @@ import java.util.UUID;
 @Data
 public class NodeLink {
     public static final Integer interactHandlerID = 2 << 25;
+
+    static {
+        VisualCache.setInteractHandler(interactHandlerID, (event, clicked, interaction) -> {
+            // no ideas yet
+        });
+    }
+
     private VisualNode source;
     private VisualNode destination;
     private BlockDisplay display;
     private Interaction interaction;
-
-    static {
-        VisualCache.setInteractHandler(interactHandlerID, ( event, clicked, interaction) -> {
-            // no ideas yet
-        });
-    }
 
     public NodeLink(VisualNode source, VisualNode destination) {
         this.source = source;
@@ -46,6 +49,45 @@ public class NodeLink {
         this.interaction = interaction;
         VisualCache.addNodeLink(this);
         saveToPDC(getDisplay().getPersistentDataContainer());
+    }
+
+    public static NodeLink loadFromPDC(PersistentDataContainer pdc) {
+        UUID uuid = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_uuid"), DataType.UUID);
+        if (uuid == null) {
+            return null;
+        }
+
+        UUID sourceUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_source"), DataType.UUID);
+        if (sourceUUID == null) {
+            return null;
+        }
+
+        UUID destinationUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_destination"), DataType.UUID);
+        if (destinationUUID == null) {
+            return null;
+        }
+
+        VisualNode source = VisualCache.getVisualNode(new VisualNodeId(sourceUUID));
+        if (source == null) {
+            return null;
+        }
+
+        VisualNode destination = VisualCache.getVisualNode(new VisualNodeId(destinationUUID));
+        if (destination == null) {
+            return null;
+        }
+
+        UUID interactionUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_interaction"), DataType.UUID);
+        if (interactionUUID == null) {
+            return null;
+        }
+
+        Entity interactionEntity = Bukkit.getEntity(interactionUUID);
+        if (!(interactionEntity instanceof Interaction interaction)) {
+            return null;
+        }
+
+        return new NodeLink(source, destination, interaction);
     }
 
     private BlockDisplay createLine(Location source, Location destination) {
@@ -69,60 +111,21 @@ public class NodeLink {
     private Interaction createInteraction(Location location) {
         Interaction interaction = location.getWorld().spawn(location, Interaction.class);
         interaction.getPersistentDataContainer().set(new NamespacedKey(Configurator.getInstance(), "c_interaction_belongs_to"), DataType.UUID, display.getUniqueId());
-        interaction.setInteractionHeight(display.getDisplayHeight() + 1);
-        interaction.setInteractionWidth(display.getDisplayWidth() + 1);
+        interaction.setInteractionHeight(display.getDisplayHeight()/* + 1*/);
+        interaction.setInteractionWidth(display.getDisplayWidth()/* + 1*/);
         return interaction;
     }
 
     public void saveToPDC(PersistentDataContainer pdc) {
         pdc.set(new NamespacedKey(Configurator.getInstance(), "c_link_uuid"), DataType.UUID, display.getUniqueId());
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_link_source"), DataType.UUID, source.getUniqueId());
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_link_destination"), DataType.UUID, destination.getUniqueId());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_link_source"), DataType.UUID, source.getUniqueId().getUuid());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_link_destination"), DataType.UUID, destination.getUniqueId().getUuid());
         pdc.set(new NamespacedKey(Configurator.getInstance(), "c_link_interaction"), DataType.UUID, interaction.getUniqueId());
         pdc.set(new NamespacedKey(Configurator.getInstance(), "c_interact_handler"), DataType.INTEGER, interactHandlerID);
     }
 
-    public static NodeLink loadFromPDC(PersistentDataContainer pdc) {
-        UUID uuid = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_uuid"), DataType.UUID);
-        if (uuid == null) {
-            return null;
-        }
-
-        UUID sourceUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_source"), DataType.UUID);
-        if (sourceUUID == null) {
-            return null;
-        }
-
-        UUID destinationUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_destination"), DataType.UUID);
-        if (destinationUUID == null) {
-            return null;
-        }
-
-        VisualNode source = VisualCache.getVisualNode(sourceUUID);
-        if (source == null) {
-            return null;
-        }
-
-        VisualNode destination = VisualCache.getVisualNode(destinationUUID);
-        if (destination == null) {
-            return null;
-        }
-
-        UUID interactionUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_interaction"), DataType.UUID);
-        if (interactionUUID == null) {
-            return null;
-        }
-
-        Entity interactionEntity = Bukkit.getEntity(interactionUUID);
-        if (!(interactionEntity instanceof Interaction interaction)) {
-            return null;
-        }
-
-        return new NodeLink(source, destination, interaction);
-    }
-
-    public UUID getUniqueId() {
-        return display.getUniqueId();
+    public NodeLinkId getUniqueId() {
+        return new NodeLinkId(display.getUniqueId());
     }
 
     public Location getLocation() {
