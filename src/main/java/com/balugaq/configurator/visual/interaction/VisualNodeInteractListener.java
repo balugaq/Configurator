@@ -10,9 +10,6 @@ import com.balugaq.configurator.visual.VisualCache;
 import com.balugaq.configurator.visual.movement.ControlVisualListener;
 import com.jeff_media.morepersistentdatatypes.DataType;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.BlockDisplay;
-import org.bukkit.entity.Interaction;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,9 +18,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class VisualNodeInteractListener implements Listener {

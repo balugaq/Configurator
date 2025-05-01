@@ -4,8 +4,6 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 
-import java.util.List;
-
 public class VisualSaver {
     public static void save(Iterable<Entity> event) {
         for (Entity entity : event) {

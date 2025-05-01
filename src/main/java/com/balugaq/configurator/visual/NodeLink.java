@@ -57,6 +57,12 @@ public class NodeLink {
             return null;
         }
 
+        NodeLink loaded = VisualCache.getNodeLink(new NodeLinkId(uuid));
+        if (loaded != null) {
+            return loaded;
+        }
+
+
         UUID sourceUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_source"), DataType.UUID);
         if (sourceUUID == null) {
             return null;

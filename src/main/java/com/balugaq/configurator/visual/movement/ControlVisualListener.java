@@ -72,6 +72,11 @@ public class ControlVisualListener implements Listener {
             return;
         }
 
+        if (listening.containsKey(player.getUniqueId())) {
+            unlistenPlayer(player);
+            return;
+        }
+
         listening.put(player.getUniqueId(), entities);
 
         switchControlSince.put(player.getUniqueId(), System.currentTimeMillis());
