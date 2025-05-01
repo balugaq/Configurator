@@ -8,11 +8,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -20,23 +20,33 @@ import java.util.UUID;
 
 @Data
 public class VisualNode {
+    public static final Integer interactHandlerID = 2 << 17;
     private Node node;
     private Location location;
     private ItemDisplay display;
+    private Interaction interaction;
     private ArrayList<UUID> children;
+
+    static {
+        VisualCache.setInteractHandler(interactHandlerID, ( event, clicked, interaction) -> {
+            event.getPlayer().sendMessage("Called VisualNode InteractHandler");
+        });
+    }
 
     public VisualNode(Node node, Location location) {
         this.node = node;
         this.location = location;
         this.display = createItemDisplay(location);
+        this.interaction = createInteraction(location);
         this.children = new ArrayList<>();
         VisualCache.addVisualNode(this);
     }
 
-    public VisualNode(Node node, Location location, ItemDisplay display, ArrayList<UUID> children) {
+    public VisualNode(Node node, Location location, ItemDisplay display, Interaction interaction, ArrayList<UUID> children) {
         this.node = node;
         this.location = location;
         this.display = display;
+        this.interaction = interaction;
         this.children = children;
         VisualCache.addVisualNode(this);
     }
@@ -49,11 +59,21 @@ public class VisualNode {
         return itemDisplay;
     }
 
+    private Interaction createInteraction(Location location) {
+        Interaction interaction = location.getWorld().spawn(location, Interaction.class);
+        interaction.getPersistentDataContainer().set(new NamespacedKey(Configurator.getInstance(), "c_interaction_belongs_to"), DataType.UUID, display.getUniqueId());
+        interaction.setInteractionHeight(display.getDisplayHeight() + 1);
+        interaction.setInteractionWidth(display.getDisplayWidth() + 1);
+        return interaction;
+    }
+
     public void saveToPDC(PersistentDataContainer pdc) {
         pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_uuid"), DataType.UUID, display.getUniqueId());
         pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_children"), DataType.asArrayList(DataType.UUID), children);
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_key"), PersistentDataType.STRING, node.getKey());
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_value"), PersistentDataType.STRING, serializeValue(node.getValue()));
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_key"), DataType.STRING, node.getKey());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_value"), DataType.STRING, serializeValue(node.getValue()));
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_interaction"), DataType.UUID, interaction.getUniqueId());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_interact_handler"), DataType.INTEGER, interactHandlerID);
     }
 
     public static VisualNode loadFromPDC(PersistentDataContainer pdc) {
@@ -72,13 +92,23 @@ public class VisualNode {
             return null;
         }
 
-        String key = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_key"), PersistentDataType.STRING);
+        String key = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_key"), DataType.STRING);
         if (key == null) {
             return null;
         }
 
-        String valueString = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_value"), PersistentDataType.STRING);
+        String valueString = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_value"), DataType.STRING);
         if (valueString == null) {
+            return null;
+        }
+
+        UUID interactionUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_interaction"), DataType.UUID);
+        if (interactionUUID == null) {
+            return null;
+        }
+
+        Entity interactionEntity = Bukkit.getEntity(interactionUUID);
+        if (!(interactionEntity instanceof Interaction interaction)) {
             return null;
         }
 
@@ -103,7 +133,7 @@ public class VisualNode {
             node.addChild(childVisualNode.getNode());
         }
 
-        return new VisualNode(node, itemDisplay.getLocation(), itemDisplay, children);
+        return new VisualNode(node, itemDisplay.getLocation(), itemDisplay, interaction, children);
     }
 
     private static String serializeValue(Object value) {
@@ -170,5 +200,9 @@ public class VisualNode {
 
     public void setValue(Object value) {
         node.setValue(value);
+    }
+
+    public UUID getUniqueId() {
+        return display.getUniqueId();
     }
 }

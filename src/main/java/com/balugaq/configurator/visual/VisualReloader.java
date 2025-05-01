@@ -8,7 +8,6 @@ import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 public class VisualReloader implements Listener {
     @EventHandler
@@ -24,6 +23,7 @@ public class VisualReloader implements Listener {
     public static void loadVisual(List<Entity> entities) {
         for (Entity entity : entities) {
             VisualNode.loadFromPDC(entity.getPersistentDataContainer());
+            NodeLink.loadFromPDC(entity.getPersistentDataContainer());
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.balugaq.configurator.visual;
 
+import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 
@@ -8,17 +9,22 @@ import java.util.List;
 public class VisualSaver {
     public static void save(List<Entity> event) {
         for (Entity entity : event) {
-            if (!(entity instanceof ItemDisplay itemDisplay)) {
-                continue;
-            }
+            if (entity instanceof ItemDisplay) {
+                VisualNode visualNode = VisualNode.loadFromPDC(entity.getPersistentDataContainer());
+                if (visualNode == null) {
+                    continue;
+                }
 
-            VisualNode visualNode = VisualNode.loadFromPDC(itemDisplay.getPersistentDataContainer());
-            if (visualNode == null) {
-                continue;
-            }
+                visualNode.saveToPDC(entity.getPersistentDataContainer());
+                visualNode.getNode().update();
+            } else if (entity instanceof BlockDisplay) {
+                NodeLink nodeLink = NodeLink.loadFromPDC(entity.getPersistentDataContainer());
+                if (nodeLink == null) {
+                    continue;
+                }
 
-            visualNode.saveToPDC(itemDisplay.getPersistentDataContainer());
-            visualNode.getNode().update();
+                nodeLink.saveToPDC(entity.getPersistentDataContainer());
+            }
         }
     }
 }
