@@ -2,62 +2,173 @@ package com.balugaq.configurator.visual;
 
 import com.balugaq.configurator.Configurator;
 import com.balugaq.configurator.data.relation.Node;
+import com.jeff_media.morepersistentdatatypes.DataType;
 import lombok.Data;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.ArrayList;
+import java.util.Objects;
 import java.util.UUID;
 
 @Data
 public class VisualNode {
     private Node node;
     private Location location;
-    private ItemDisplay itemDisplay;
+    private ItemDisplay display;
+    private ArrayList<UUID> children;
 
     public VisualNode(Node node, Location location) {
         this.node = node;
         this.location = location;
-        this.itemDisplay = createItemDisplay(location);
+        this.display = createItemDisplay(location);
+        this.children = new ArrayList<>();
+        VisualCache.addVisualNode(this);
+    }
+
+    public VisualNode(Node node, Location location, ItemDisplay display, ArrayList<UUID> children) {
+        this.node = node;
+        this.location = location;
+        this.display = display;
+        this.children = children;
+        VisualCache.addVisualNode(this);
     }
 
     private ItemDisplay createItemDisplay(Location location) {
-        // 创建ItemDisplay实体并设置其属性
         ItemDisplay itemDisplay = location.getWorld().spawn(location, ItemDisplay.class);
-        itemDisplay.setCustomName(node.getKey()); // 设置实体上方显示的名称为配置键名
-        itemDisplay.setCustomNameVisible(true); // 显示名称
+        itemDisplay.setItemStack(new ItemStack(Material.STONE));
+        itemDisplay.setCustomName(node.getKey());
+        itemDisplay.setCustomNameVisible(true);
         return itemDisplay;
     }
 
-    // 将VisualNode数据保存到PDC
     public void saveToPDC(PersistentDataContainer pdc) {
-        node.saveToPDC(pdc); // 保存Node数据
-        pdc.set(new NamespacedKey(Configurator.getInstance(), "location_" + node.getUuid()), PersistentDataType.STRING, locationToString(location));
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_uuid"), DataType.UUID, display.getUniqueId());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_children"), DataType.asArrayList(DataType.UUID), children);
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_key"), PersistentDataType.STRING, node.getKey());
+        pdc.set(new NamespacedKey(Configurator.getInstance(), "c_node_value"), PersistentDataType.STRING, serializeValue(node.getValue()));
     }
 
-    // 从PDC加载VisualNode数据
-    public static VisualNode loadFromPDC(PersistentDataContainer pdc, UUID uuid) {
-        Node node = Node.loadFromPDC(pdc, uuid); // 加载Node数据
-        String locationStr = pdc.get(new NamespacedKey(Configurator.getInstance(), "location_" + uuid), PersistentDataType.STRING);
-        Location location = stringToLocation(locationStr);
-        return new VisualNode(node, location);
-    }
-
-    private String locationToString(Location location) {
-        return location.getWorld().getName() + "," + location.getX() + "," + location.getY() + "," + location.getZ();
-    }
-
-    private static Location stringToLocation(String locationStr) {
-        String[] parts = locationStr.split(",");
-        if (parts.length == 4) {
-            String worldName = parts[0];
-            double x = Double.parseDouble(parts[1]);
-            double y = Double.parseDouble(parts[2]);
-            double z = Double.parseDouble(parts[3]);
-            return new Location(Configurator.getInstance().getServer().getWorld(worldName), x, y, z);
+    public static VisualNode loadFromPDC(PersistentDataContainer pdc) {
+        UUID uuid = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_uuid"), DataType.UUID);
+        if (uuid == null) {
+            return null;
         }
-        return null;
+
+        VisualNode loaded = VisualCache.getVisualNode(uuid);
+        if (loaded != null) {
+            return loaded;
+        }
+
+        ArrayList<UUID> children = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_children"), DataType.asArrayList(DataType.UUID));
+        if (children == null) {
+            return null;
+        }
+
+        String key = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_key"), PersistentDataType.STRING);
+        if (key == null) {
+            return null;
+        }
+
+        String valueString = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_node_value"), PersistentDataType.STRING);
+        if (valueString == null) {
+            return null;
+        }
+
+        Object value = deserializeValue(valueString);
+        Node node = new Node(key, value);
+        Entity entity = Bukkit.getEntity(uuid);
+        if (!(entity instanceof ItemDisplay itemDisplay)) {
+            return null;
+        }
+
+        for (UUID child : children) {
+            Entity childEntity = Bukkit.getEntity(child);
+            if (!(childEntity instanceof ItemDisplay childItemDisplay)) {
+                continue;
+            }
+
+            VisualNode childVisualNode = loadFromPDC(childItemDisplay.getPersistentDataContainer());
+            if (childVisualNode == null){
+                continue;
+            }
+
+            node.addChild(childVisualNode.getNode());
+        }
+
+        return new VisualNode(node, itemDisplay.getLocation(), itemDisplay, children);
+    }
+
+    private static String serializeValue(Object value) {
+        if (value == null) {
+            return "!NULL";
+        } else if (value instanceof Integer) {
+            return value + "I";
+        } else if (value instanceof Float) {
+            return value + "F";
+        } else if (value instanceof Double) {
+            return value + "D";
+        } else if (value instanceof Boolean) {
+            return value + "b";
+        } else if (value instanceof Byte) {
+            return value + "B";
+        } else if (value instanceof Short) {
+            return value + "S";
+        } else if (value instanceof Long) {
+            return value + "L";
+        } else if (value instanceof String) {
+            return String.valueOf(value);
+        } else {
+            return String.valueOf(value);
+        }
+    }
+
+    private static Object deserializeValue(String value) {
+        try {
+            if (Objects.equals(value, "!NULL")) {
+                return null;
+            } else if (value.endsWith("I")) {
+                return Integer.parseInt(value.substring(0, value.length() - 1));
+            } else if (value.endsWith("F")) {
+                return Float.parseFloat(value.substring(0, value.length() - 1));
+            } else if (value.endsWith("D")) {
+                return Double.parseDouble(value.substring(0, value.length() - 1));
+            } else if (value.endsWith("b")) {
+                return Boolean.parseBoolean(value.substring(0, value.length() - 1));
+            } else if (value.endsWith("B")) {
+                return Byte.parseByte(value.substring(0, value.length() - 1));
+            } else if (value.endsWith("S")) {
+                return Short.parseShort(value.substring(0, value.length() - 1));
+            } else if (value.endsWith("L")) {
+                return Long.parseLong(value.substring(0, value.length() - 1));
+            } else {
+                return value;
+            }
+        } catch (NumberFormatException e) {
+            // Quote string
+            return value;
+        }
+    }
+
+    public void updateDisplay() {
+        if (node.isDirty()) {
+            display.setCustomName(node.getKey());
+            node.update();
+        }
+    }
+
+    public void setKey(String key) {
+        node.setKey(key);
+    }
+
+    public void setValue(Object value) {
+        node.setValue(value);
     }
 }

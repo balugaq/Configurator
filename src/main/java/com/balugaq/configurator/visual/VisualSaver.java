@@ -1,11 +1,24 @@
 package com.balugaq.configurator.visual;
 
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
 
 import java.util.List;
 
 public class VisualSaver {
     public static void save(List<Entity> event) {
-        // 检测是否为 Node 生成的实体，如果是，则将 Node 的数据保存到实体的 PDC 中
+        for (Entity entity : event) {
+            if (!(entity instanceof ItemDisplay itemDisplay)) {
+                continue;
+            }
+
+            VisualNode visualNode = VisualNode.loadFromPDC(itemDisplay.getPersistentDataContainer());
+            if (visualNode == null) {
+                continue;
+            }
+
+            visualNode.saveToPDC(itemDisplay.getPersistentDataContainer());
+            visualNode.getNode().update();
+        }
     }
 }

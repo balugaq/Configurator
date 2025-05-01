@@ -129,8 +129,8 @@
 
     <repositories>
         <repository>
-            <id>org.metamechanists</id>
-            <url>https://repo.metamechanists.org/releases/</url>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repo/repository/maven-public/</url>
         </repository>
         <repository>
             <id>spigot-repo</id>
@@ -141,12 +141,20 @@
             <url>https://jitpack.io</url>
         </repository>
         <repository>
-            <id>papermc</id>
-            <url>https://papermc.io/repo/repository/maven-public/</url>
-        </repository>
-        <repository>
             <id>codemc-snapshots</id>
             <url>https://repo.codemc.io/repository/maven-snapshots/</url>
+        </repository>
+        <repository>
+            <id>jeffMediaPublic</id>
+            <url>https://repo.jeff-media.com/public</url>
+        </repository>
+        <repository>
+            <id>bg-repo</id>
+            <url>https://repo.bg-software.com/repository/api/</url>
+        </repository>
+        <repository>
+            <id>org.metamechanists</id>
+            <url>https://repo.metamechanists.org/releases/</url>
         </repository>
     </repositories>
 
@@ -155,7 +163,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.20.1-R0.1-SNAPSHOT</version>
+            <version>1.21.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
 
@@ -206,6 +214,14 @@
             <groupId>org.metamechanists</groupId>
             <artifactId>DisplayModelLib</artifactId>
             <version>3</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Useful PDC Types -->
+        <dependency>
+            <groupId>com.jeff-media</groupId>
+            <artifactId>MorePersistentDataTypes</artifactId>
+            <version>2.4.0</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
