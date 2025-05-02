@@ -7,6 +7,7 @@ import com.balugaq.configurator.events.PlayerInteractVisualNodeEvent;
 import com.jeff_media.morepersistentdatatypes.DataType;
 import lombok.Data;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -27,10 +28,8 @@ public class VisualNode {
 
     static {
         VisualCache.setInteractHandler(interactHandlerID, (event, belongsTo, interaction) -> {
-            Configurator.getInstance().getLogger().info("Called VisualNode InteractHandler");
             VisualNode visualNode = VisualCache.getVisualNode(new VisualNodeId(belongsTo.getUniqueId()));
             if (visualNode != null) {
-                Configurator.getInstance().getLogger().info("New PlayerInteractVisualNodeEvent");
                 new PlayerInteractVisualNodeEvent(event.getPlayer(), visualNode).callEvent();
             }
         });
@@ -174,7 +173,7 @@ public class VisualNode {
     private ItemDisplay createItemDisplay(Location location) {
         ItemDisplay itemDisplay = location.getWorld().spawn(location, ItemDisplay.class);
         itemDisplay.setItemStack(new ItemStack(Material.STONE));
-        itemDisplay.setCustomName(node.getKey());
+        itemDisplay.setCustomName(ChatColor.translateAlternateColorCodes('&', node.getKey()));
         itemDisplay.setCustomNameVisible(true);
         return itemDisplay;
     }
@@ -209,10 +208,12 @@ public class VisualNode {
 
     public void setKey(String key) {
         node.setKey(key);
+        node.setDirty(true);
     }
 
     public void setValue(Object value) {
         node.setValue(value);
+        node.setDirty(true);
     }
 
     public VisualNodeId getUniqueId() {
@@ -232,5 +233,17 @@ public class VisualNode {
             new NodeLink(this, connect);
         }
         links.forEach(NodeLink::remove);
+    }
+
+    public void addChild(VisualNode child) {
+        children.add(child.getUniqueId().getUuid());
+        node.addChild(child.getNode());
+        saveToPDC(display.getPersistentDataContainer());
+    }
+
+    public void removeChild(VisualNode child) {
+        children.remove(child.getUniqueId().getUuid());
+        node.removeChild(child.getNode());
+        saveToPDC(display.getPersistentDataContainer());
     }
 }

@@ -1,12 +1,19 @@
 package com.balugaq.configurator.command;
 
+import com.balugaq.configurator.Configurator;
 import com.balugaq.configurator.Items;
 import com.balugaq.configurator.data.VisualNodeId;
 import com.balugaq.configurator.data.relation.Node;
+import com.balugaq.configurator.data.writer.YAMLWriter;
 import com.balugaq.configurator.visual.NodeLink;
 import com.balugaq.configurator.visual.VisualCache;
 import com.balugaq.configurator.visual.VisualNode;
 import com.balugaq.configurator.visual.movement.ControlVisualListener;
+import com.jeff_media.morepersistentdatatypes.DataType;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -40,6 +47,20 @@ public class ConfiguratorCommand implements TabExecutor {
             ControlVisualListener.listenPlayer(player, player.getTargetEntity((int) ControlVisualListener.distance));
         if (strings[0].equals("put"))
             ControlVisualListener.unlistenPlayer(player);
+        if (strings[0].equals("root")) {
+            VisualNode root;
+            if (strings.length == 1) {
+                root = VisualCache.getVisualNode(new VisualNodeId(player.getTargetEntity(3).getPersistentDataContainer().get(new NamespacedKey(Configurator.getInstance(), "c_interaction_belongs_to"), DataType.UUID)));
+            } else {
+                root = VisualCache.getVisualNode(new VisualNodeId(UUID.fromString(strings[1])));
+            }
+            new YAMLWriter().write(root.getNode(), configuration -> {
+                TextComponent component = new TextComponent();
+                component.addExtra("点击复制到粘贴板");
+                component.setClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, configuration.saveToString()));
+                player.sendMessage(component);
+            });
+        }
         return true;
     }
 

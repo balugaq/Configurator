@@ -4,6 +4,10 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 public class Items {
+    public static final ItemStack AIR = Converter.getItem(
+            Material.AIR
+    );
+
     public static final ItemStack CONTROL_WAND = Converter.getItem(
             Material.BLAZE_ROD,
             "&6校准棒",

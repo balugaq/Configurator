@@ -38,14 +38,15 @@ public class NodeLink {
         this.destination = destination;
         this.display = createLine(source.getLocation(), destination.getLocation());
         this.interaction = createInteraction(source.getLocation());
+        source.addChild(destination);
         VisualCache.addNodeLink(this);
         saveToPDC(getDisplay().getPersistentDataContainer());
     }
 
-    public NodeLink(VisualNode source, VisualNode destination, Interaction interaction) {
+    public NodeLink(VisualNode source, VisualNode destination, BlockDisplay blockDisplay, Interaction interaction) {
         this.source = source;
         this.destination = destination;
-        this.display = createLine(source.getLocation(), destination.getLocation());
+        this.display = blockDisplay;
         this.interaction = interaction;
         VisualCache.addNodeLink(this);
         saveToPDC(getDisplay().getPersistentDataContainer());
@@ -62,6 +63,10 @@ public class NodeLink {
             return loaded;
         }
 
+        Entity blockDisplayEntity = Bukkit.getEntity(uuid);
+        if (!(blockDisplayEntity instanceof BlockDisplay blockDisplay)) {
+            return null;
+        }
 
         UUID sourceUUID = pdc.get(new NamespacedKey(Configurator.getInstance(), "c_link_source"), DataType.UUID);
         if (sourceUUID == null) {
@@ -93,7 +98,7 @@ public class NodeLink {
             return null;
         }
 
-        return new NodeLink(source, destination, interaction);
+        return new NodeLink(source, destination, blockDisplay, interaction);
     }
 
     private BlockDisplay createLine(Location source, Location destination) {
@@ -107,10 +112,10 @@ public class NodeLink {
         return new ModelLine()
                 .from(TransformationUtils.getDisplacement(midpoint, source))
                 .to(TransformationUtils.getDisplacement(midpoint, destination))
-                .thickness(0.05f)
+                .thickness(0.2f)
                 .roll(0)
                 .brightness(15)
-                .material(Material.WHITE_CONCRETE)
+                .material(Material.GRINDSTONE)
                 .build(midpoint);
     }
 

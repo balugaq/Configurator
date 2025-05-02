@@ -21,6 +21,7 @@ import java.util.Set;
 public class VisualCache {
     private static final Map<VisualNodeId, VisualNode> visualNodes = new HashMap<>();
     private static final Map<NodeLinkId, NodeLink> nodeLinks = new HashMap<>();
+    /*                       Father      ->    Child      */
     private static final Map<VisualNodeId, Set<NodeLinkId>> connectedNodes = new HashMap<>();
     private static final Map<Integer, InteractHandler> interactHandlers = new HashMap<>();
 
@@ -32,18 +33,11 @@ public class VisualCache {
         nodeLinks.put(nodeLink.getUniqueId(), nodeLink);
 
         VisualNode source = nodeLink.getSource();
-        VisualNode destination = nodeLink.getDestination();
         if (!connectedNodes.containsKey(source.getUniqueId())) {
             connectedNodes.put(source.getUniqueId(), new HashSet<>());
         }
 
         connectedNodes.get(source.getUniqueId()).add(nodeLink.getUniqueId());
-
-        if (!connectedNodes.containsKey(destination.getUniqueId())) {
-            connectedNodes.put(destination.getUniqueId(), new HashSet<>());
-        }
-
-        connectedNodes.get(destination.getUniqueId()).add(nodeLink.getUniqueId());
     }
 
     public static void setInteractHandler(Integer id, InteractHandler interactHandler) {
@@ -56,6 +50,8 @@ public class VisualCache {
 
     public static void removeNodeLink(NodeLink nodeLink) {
         nodeLinks.remove(nodeLink.getUniqueId());
+        connectedNodes.get(nodeLink.getSource().getUniqueId()).remove(nodeLink.getUniqueId());
+        nodeLink.getSource().removeChild(nodeLink.getDestination());
     }
 
     public static NodeLink getNodeLink(NodeLinkId uuid) {

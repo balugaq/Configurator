@@ -2,6 +2,7 @@ package com.balugaq.configurator.events;
 
 import com.balugaq.configurator.visual.VisualNode;
 import lombok.Getter;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;

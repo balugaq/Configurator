@@ -1,5 +1,6 @@
 package com.balugaq.configurator.visual.interaction;
 
+import com.balugaq.configurator.ChatUtils;
 import com.balugaq.configurator.Configurator;
 import com.balugaq.configurator.Converter;
 import com.balugaq.configurator.Items;
@@ -28,17 +29,14 @@ public class VisualNodeInteractListener implements Listener {
 
     @EventHandler
     public void onInteractVisualNode(PlayerInteractVisualNodeEvent event) {
-        Configurator.getInstance().getLogger().info("Called onInteractVisualNode");
         Player player = event.getPlayer();
         if (hold(player, Items.CONTROL_WAND)) {
-            Configurator.getInstance().getLogger().info("Called ControlWand");
             var visualNode = event.getVisualNode();
             ControlVisualListener.listenPlayer(player, List.of(visualNode.getDisplay(), visualNode.getInteraction()));
             ControlVisualListener.addHandler(player, (e, entities) -> {
                 visualNode.reconnect();
             });
         } else if (hold(player, Items.CONNECT_WAND)) {
-            Configurator.getInstance().getLogger().info("Called ConnectWand");
             var mainHand = player.getInventory().getItemInMainHand();
             var meta = mainHand.getItemMeta();
             if (!meta.getPersistentDataContainer().has(new NamespacedKey(Configurator.getInstance(), "source"))) {
@@ -63,12 +61,24 @@ public class VisualNodeInteractListener implements Listener {
                             break;
                         }
                     }
+
+                    player.sendMessage("已取消连接");
                 } else {
                     new NodeLink(source, destination);
+                    player.sendMessage("已连接实体");
                 }
+
                 player.getInventory().setItemInMainHand(Converter.getItem(Items.CONNECT_WAND));
-                player.sendMessage("已连接实体");
             }
+        } else if (hold(player, Items.AIR)) {
+            ChatUtils.awaitInput(player, "输入键/值", input -> {
+                if (input.startsWith("v ")) {
+                    input = input.substring(2);
+                    event.getVisualNode().setValue(input);
+                } else {
+                    event.getVisualNode().setKey(input);
+                }
+            });
         } else {
             event.getVisualNode().getDisplay().setItemStack(event.getPlayer().getInventory().getItemInMainHand());
             event.getVisualNode().getNode().setDirty(true);
