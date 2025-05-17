@@ -1,14 +1,14 @@
-name: Configurator
+name: Connector
 author: balugaq
 description: This is a plugin
-main: com.balugaq.configurator.Configurator
-website: https://github.com/balugaq/Configurator
+main: com.balugaq.connector.Connector
+website: https://github.com/balugaq/Connector
 version: ${project.version}
 api-version: 1.20
 commands:
-  configurator:
+  connector:
     aliases:
       - cf
-      - configurator
-    description: /configurator
-    usage: /configurator <sub>
+      - connector
+    description: /connector
+    usage: /connector <sub>

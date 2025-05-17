@@ -1,4 +1,4 @@
-package com.balugaq.configurator.data.relation;
+package com.balugaq.connector.data.relation;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

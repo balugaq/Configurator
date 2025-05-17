@@ -1,8 +1,7 @@
-package com.balugaq.configurator.events;
+package com.balugaq.connector.events;
 
-import com.balugaq.configurator.visual.VisualNode;
+import com.balugaq.connector.visual.VisualNode;
 import lombok.Getter;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;

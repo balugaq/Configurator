@@ -1,4 +1,4 @@
-package com.balugaq.configurator;
+package com.balugaq.connector;
 
 import com.google.common.base.Preconditions;
 import org.bukkit.ChatColor;

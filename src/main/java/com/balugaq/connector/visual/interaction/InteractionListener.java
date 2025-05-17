@@ -1,7 +1,7 @@
-package com.balugaq.configurator.visual.interaction;
+package com.balugaq.connector.visual.interaction;
 
-import com.balugaq.configurator.Configurator;
-import com.balugaq.configurator.visual.VisualCache;
+import com.balugaq.connector.Connector;
+import com.balugaq.connector.visual.VisualCache;
 import com.jeff_media.morepersistentdatatypes.DataType;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -21,7 +21,7 @@ public class InteractionListener implements Listener {
             return;
         }
 
-        UUID belongsTo = interaction.getPersistentDataContainer().get(new NamespacedKey(Configurator.getInstance(), "c_interaction_belongs_to"), DataType.UUID);
+        UUID belongsTo = interaction.getPersistentDataContainer().get(new NamespacedKey(Connector.getInstance(), "c_interaction_belongs_to"), DataType.UUID);
         if (belongsTo == null) {
             return;
         }
@@ -31,7 +31,7 @@ public class InteractionListener implements Listener {
             return;
         }
 
-        Integer handlerID = entity.getPersistentDataContainer().get(new NamespacedKey(Configurator.getInstance(), "c_interact_handler"), PersistentDataType.INTEGER);
+        Integer handlerID = entity.getPersistentDataContainer().get(new NamespacedKey(Connector.getInstance(), "c_interact_handler"), PersistentDataType.INTEGER);
         if (handlerID == null) {
             return;
         }

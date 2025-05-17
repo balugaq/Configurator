@@ -1,4 +1,4 @@
-package com.balugaq.configurator.visual;
+package com.balugaq.connector.visual;
 
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Entity;

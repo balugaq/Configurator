@@ -1,4 +1,4 @@
-package com.balugaq.configurator;
+package com.balugaq.connector;
 
 import org.bukkit.Color;
 import org.bukkit.Material;

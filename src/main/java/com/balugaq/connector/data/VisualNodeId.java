@@ -1,4 +1,4 @@
-package com.balugaq.configurator.data;
+package com.balugaq.connector.data;
 
 import java.util.UUID;
 

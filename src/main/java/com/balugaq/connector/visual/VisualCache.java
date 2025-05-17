@@ -1,43 +1,34 @@
-package com.balugaq.configurator.visual;
+package com.balugaq.connector.visual;
 
-import com.balugaq.configurator.Configurator;
-import com.balugaq.configurator.data.NodeLinkId;
-import com.balugaq.configurator.data.VisualNodeId;
+import com.balugaq.connector.Connector;
+import com.balugaq.connector.data.NodeLinkId;
+import com.balugaq.connector.data.VisualNodeId;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 
 @Getter
 public class VisualCache {
     private static final Map<VisualNodeId, VisualNode> visualNodes = new HashMap<>();
     private static final Map<NodeLinkId, NodeLink> nodeLinks = new HashMap<>();
-    /*                       Father      ->    Child      */
-    private static final Map<VisualNodeId, Set<NodeLinkId>> connectedNodes = new HashMap<>();
+    private static final Map<VisualNodeId, NodeLinkId> connectedNodes = new HashMap<>();
     private static final Map<Integer, InteractHandler> interactHandlers = new HashMap<>();
 
     public static void addVisualNode(VisualNode visualNode) {
         visualNodes.put(visualNode.getUniqueId(), visualNode);
     }
 
-    public static void addNodeLink(NodeLink nodeLink) {
+    public static void setNodeLink(NodeLink nodeLink) {
         nodeLinks.put(nodeLink.getUniqueId(), nodeLink);
 
         VisualNode source = nodeLink.getSource();
-        if (!connectedNodes.containsKey(source.getUniqueId())) {
-            connectedNodes.put(source.getUniqueId(), new HashSet<>());
-        }
-
-        connectedNodes.get(source.getUniqueId()).add(nodeLink.getUniqueId());
+        connectedNodes.put(source.getUniqueId(), nodeLink.getUniqueId());
     }
 
     public static void setInteractHandler(Integer id, InteractHandler interactHandler) {
@@ -50,7 +41,7 @@ public class VisualCache {
 
     public static void removeNodeLink(NodeLink nodeLink) {
         nodeLinks.remove(nodeLink.getUniqueId());
-        connectedNodes.get(nodeLink.getSource().getUniqueId()).remove(nodeLink.getUniqueId());
+        connectedNodes.remove(nodeLink.getSource().getUniqueId());
         nodeLink.getSource().removeChild(nodeLink.getDestination());
     }
 
@@ -70,7 +61,7 @@ public class VisualCache {
         return nodeLinks;
     }
 
-    public static Map<VisualNodeId, Set<NodeLinkId>> getAllConnectedNodes() {
+    public static Map<VisualNodeId, NodeLinkId> getAllConnectedNodes() {
         return connectedNodes;
     }
 
@@ -78,17 +69,28 @@ public class VisualCache {
         visualNodes.remove(visualNode.getUniqueId());
     }
 
-    public static List<NodeLink> getConnectedNodeLinks(VisualNode node) {
+    @Nullable
+    public static NodeLink getConnectedNodeLink(VisualNode node) {
         var connected = connectedNodes.get(node.getUniqueId());
         if (connected == null) {
-            return new ArrayList<>();
+            return null;
         }
 
-        return connected.stream().map(nodeLinks::get).filter(Objects::nonNull).toList();
+        return getNodeLink(connected);
+    }
+
+    public static boolean existsNodeLink(VisualNode source, VisualNode destination) {
+        var linkId = connectedNodes.get(source.getUniqueId());
+        if (linkId == null) {
+            return false;
+        }
+
+        var link = getNodeLink(linkId);
+        return link.getDestination().getLocation().equals(destination.getLocation());
     }
 
     public static void gc() {
-        Bukkit.getScheduler().runTask(Configurator.getInstance(), () -> {
+        Bukkit.getScheduler().runTask(Connector.getInstance(), () -> {
             var invalids1 = visualNodes.keySet().stream().filter(uuid -> Bukkit.getEntity(uuid.getUuid()) == null).toList();
             for (var invalid : invalids1) {
                 visualNodes.remove(invalid);
@@ -100,23 +102,11 @@ public class VisualCache {
                 nodeLinks.remove(invalid);
             }
 
-            Set<VisualNodeId> empties = new HashSet<>();
-            for (var entry : connectedNodes.entrySet()) {
-                Set<NodeLinkId> connected = entry.getValue();
-                Set<NodeLinkId> toRemove = new HashSet<>();
-                for (var uuid : connected) {
-                    if (Bukkit.getEntity(uuid.getUuid()) == null) {
-                        toRemove.add(uuid);
-                    }
+            for (var entry : new HashMap<>(connectedNodes).entrySet()) {
+                if (Bukkit.getEntity(entry.getValue().getUuid()) == null || Bukkit.getEntity(entry.getKey().getUuid()) == null) {
+                    // remove
+                    connectedNodes.remove(entry.getKey());
                 }
-                connected.removeAll(toRemove);
-                if (connected.isEmpty()) {
-                    empties.add(entry.getKey());
-                }
-            }
-
-            for (var empty : empties) {
-                connectedNodes.remove(empty);
             }
         });
     }
